@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 connectDB();
 
-app.use(express.json()); // ✅ Required to read req.body
+app.use(express.json());
 
 app.use("/api/users", userRoutes);
 
