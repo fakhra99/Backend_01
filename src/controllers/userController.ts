@@ -45,3 +45,25 @@ export const getUsers = async(req:Request, res:Response)=>{
     return res.status(500).json({message: "internal server error", error})
   }
 }
+
+// delete user
+export const delUser = async(req:Request, res:Response)=> {
+  try {
+    const userId = req.params.id;
+
+    if(!mongoose.Types.ObjectId.isValid(userId)){
+      return res.status(400).json({message: "invalid user id"})
+    }
+
+    const deletedUser = await userModel.findByIdAndDelete(userId);
+    if(!deletedUser){
+      return res.status(404).json({message: "user not found"});
+    }
+
+    return res.status(200).json({message: "user deleted successfully", deletedUser})
+  }
+  catch (error) {
+    console.error("Error deleting user", error);
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+};
