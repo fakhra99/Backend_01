@@ -1,32 +1,36 @@
-import { Request, Response } from "express";
+import mongoose from "mongoose";
 import userModel from "../models/userModel.js";
+import { Request, Response } from "express";
 
-export const registerUser = async (req: Request, res: Response) => {
-  try {
-    const { name, email, password } = req.body;
+export const createUser = async(req:Request, res:Response)=>{
+  try{
+    const {name, email, password, role}=req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    if(!name || !email || !password){
+      return res.status(400).json({ message: "all fields are required"});
     }
 
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: "User already exists" });
-    }
+    const existingUser = await userModel.findOne({email});
+    if(existingUser){
 
-    const newUser = new userModel({ name, email, password });
+      return res.status(409).json({message: "user already exist"});
+    }
+    const newUser = new userModel({name, email, password, role});
     await newUser.save();
 
-    return res.status(201).json({
-      message: "User registered successfully",
+    return res.status(200).json({
+      message: "user saved successfully",
       user: {
-        id: newUser._id,
+        id: newUser.id,
         name: newUser.name,
-        email: newUser.email
+        email: newUser.email,
+        role:newUser.role
       }
     });
-  } catch (error) {
-    console.error("Error registering user:", error);
-    return res.status(500).json({ message: "Server error" });
+
   }
-};
+  catch(error){
+    console.error("error creating user", error)
+    return res.status(500).json({messag: "internal server error", error})
+  }
+}
