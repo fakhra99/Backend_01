@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import userModel from "../models/userModel.js";
 import { Request, Response } from "express";
+import bcrypt from "bcrypt";
 
 export const createUser = async(req:Request, res:Response) =>{
   try{
@@ -15,7 +16,9 @@ export const createUser = async(req:Request, res:Response) =>{
 
       return res.status(409).json({message: "user already exist"});
     }
-    const newUser = new userModel({name, email, password, role});
+
+    const hashPassword = await bcrypt.hash(password, 10)
+    const newUser = new userModel({ name, email, password: hashPassword, role });
     await newUser.save();
 
     return res.status(200).json({
@@ -24,14 +27,15 @@ export const createUser = async(req:Request, res:Response) =>{
         id: newUser.id,
         name: newUser.name,
         email: newUser.email,
-        role:newUser.role
+        role:newUser.role,
+        password:newUser.password
       }
     });
 
   }
   catch(error){
     console.error("error creating user", error)
-    return res.status(500).json({messag: "internal server error", error})
+    return res.status(500).json({message: "internal server error", error})
   }
 }
 
@@ -69,27 +73,43 @@ export const delUser = async(req:Request, res:Response) => {
 };
 
 // update user
-export const updateUser = async(req:Request, res:Response) => {
+export const updateUser = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
-    if(!mongoose.Types.ObjectId.isValid(userId)){
-      return res.status(404).json({message: "user not found"})
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "invalid user id" });
     }
 
-    const {name, email, password, role} = req.body;
+    const { name, email, password, role } = req.body;
+
+    const updateFields: any = {};
+
+    if (name) updateFields.name = name;
+    if (email) updateFields.email = email;
+    if (role) updateFields.role = role;
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateFields.password = hashedPassword;
+    }
+
     const updatedUser = await userModel.findOneAndUpdate(
-      {_id: userId},
-      {name, email, password, role},
-      {new: true}
+      { _id: userId },
+      updateFields,
+      { new: true }
     );
 
-    if(!updatedUser){
-      return res.status(404).json({message: "user  not found"})
+    if (!updatedUser) {
+      return res.status(404).json({ message: "user not found" });
     }
-    return res.status(200).json({message: "user updated successfully", updatedUser})
 
+    return res.status(200).json({
+      message: "user updated successfully",
+      updatedUser,
+    });
   } catch (error) {
     console.error("error updating user", error);
-    return res.status(500).json({message: "internal server error"})
+    return res.status(500).json({ message: "internal server error" });
   }
-}
+};
