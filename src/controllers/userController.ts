@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 import userModel from "../models/userModel.js";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import Jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config()
 
 export const createUser = async(req:Request, res:Response) =>{
   try{
@@ -111,5 +115,41 @@ export const updateUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("error updating user", error);
     return res.status(500).json({ message: "internal server error" });
+  }
+};
+
+// login user
+export const loginUser = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if user exists
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Compare passwords
+    const matchPassword = await bcrypt.compare(password, user.password);
+    if (!matchPassword) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT
+    const jwtToken = Jwt.sign(
+      {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.PRIVATE_KEY as string,
+      { expiresIn: "1h" }
+    );
+
+    // Return success response with token
+    return res.status(200).json({ token: jwtToken });
+
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
