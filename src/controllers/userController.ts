@@ -47,7 +47,7 @@ export const createUser = async(req:Request, res:Response) =>{
 export const getUsers = async(req:Request, res:Response) =>{
   try {
     const users = await userModel.find();
-    return res.status(200).json({message: "users fetched successfully", users})
+    return res.status(200).json({message: "users fetched successfully", count:users.length, users})
   } catch (error) {
     console.error("error fetching users", error);
     return res.status(500).json({message: "internal server error", error})
@@ -150,6 +150,44 @@ export const loginUser = async (req: Request, res: Response) => {
     return res.status(200).json({ token: jwtToken });
 
   } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// get single user
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ message: "User fetched successfully", user });
+
+  } catch (error) {
+    console.error("Error fetching user", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// delete all users
+export const deleteAllUsers = async (req: Request, res: Response) => {
+  try {
+    const result = await userModel.deleteMany({});
+
+    return res.status(200).json({
+      message: "All users deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+
+  } catch (error) {
+    console.error("Error deleting all users", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
