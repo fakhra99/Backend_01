@@ -4,12 +4,15 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import Jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
 dotenv.config()
 
 export const createUser = async(req:Request, res:Response) =>{
   try{
     const {name, email, password, role}=req.body;
+    const image = req.file?.filename;
 
     if(!name || !email || !password){
       return res.status(400).json({ message: "all fields are required"});
@@ -22,7 +25,7 @@ export const createUser = async(req:Request, res:Response) =>{
     }
 
     const hashPassword = await bcrypt.hash(password, 10)
-    const newUser = new userModel({ name, email, password: hashPassword, role });
+    const newUser = new userModel({ name, email, password: hashPassword, role, image });
     await newUser.save();
 
     return res.status(200).json({
@@ -32,7 +35,8 @@ export const createUser = async(req:Request, res:Response) =>{
         name: newUser.name,
         email: newUser.email,
         role:newUser.role,
-        password:newUser.password
+        password:newUser.password,
+        image: newUser.image
       }
     });
 
@@ -54,23 +58,39 @@ export const getUsers = async(req:Request, res:Response) =>{
   }
 }
 
+
+
 // delete user
-export const delUser = async(req:Request, res:Response) => {
+export const delUser = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
 
-    if(!mongoose.Types.ObjectId.isValid(userId)){
-      return res.status(400).json({message: "invalid user id"})
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "invalid user id" });
     }
 
     const deletedUser = await userModel.findByIdAndDelete(userId);
-    if(!deletedUser){
-      return res.status(404).json({message: "user not found"});
+    if (!deletedUser) {
+      return res.status(404).json({ message: "user not found" });
     }
 
-    return res.status(200).json({message: "user deleted successfully", deletedUser})
-  }
-  catch (error) {
+    if (deletedUser.image) {
+      const filePath = path.join("uploads", "profile", deletedUser.image);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting image file:", err);
+        } else {
+          console.log("Image file deleted:", filePath);
+        }
+      });
+    }
+
+    return res.status(200).json({
+      message: "user deleted successfully",
+      deletedUser,
+    });
+
+  } catch (error) {
     console.error("Error deleting user", error);
     return res.status(500).json({ message: "Internal server error", error });
   }
@@ -86,19 +106,19 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     const { name, email, password, role } = req.body;
+    const image = req.file?.filename;
 
     const updateFields: any = {};
 
     if (name) updateFields.name = name;
     if (email) updateFields.email = email;
-    if (role) updateFields.role = role;
-
+    if (image) updateFields.image = image;
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 10);
       updateFields.password = hashedPassword;
     }
 
-    const updatedUser = await userModel.findOneAndUpdate(
+    const updatedUser = await userModel.findByIdAndUpdate(
       { _id: userId },
       updateFields,
       { new: true }
@@ -179,13 +199,30 @@ export const getUserById = async (req: Request, res: Response) => {
 // delete all users
 export const deleteAllUsers = async (req: Request, res: Response) => {
   try {
+    // Get all users
+    const users = await userModel.find({});
+
+    // Delete images (if any)
+    users.forEach((user) => {
+      if (user.image) {
+        const filePath = path.join("uploads", "profile", user.image);
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(`Error deleting image for ${user.name}:`, err);
+          } else {
+            console.log(`Deleted image for ${user.name}:`, filePath);
+          }
+        });
+      }
+    });
+
+    // Delete all users
     const result = await userModel.deleteMany({});
 
     return res.status(200).json({
-      message: "All users deleted successfully",
+      message: "All users and their images deleted successfully",
       deletedCount: result.deletedCount,
     });
-
   } catch (error) {
     console.error("Error deleting all users", error);
     return res.status(500).json({ message: "Internal server error" });
