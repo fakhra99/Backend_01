@@ -12,7 +12,7 @@ dotenv.config()
 export const createUser = async(req:Request, res:Response) =>{
   try{
     const {name, email, password, role}=req.body;
-    const image = req.file?.filename;
+    const image = req.file ? `${req.protocol}://${req.get("host")}/uploads/profile/${req.file.filename}` : undefined;
 
     if(!name || !email || !password){
       return res.status(400).json({ message: "all fields are required"});
@@ -106,7 +106,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     const { name, email, password, role } = req.body;
-    const image = req.file?.filename;
+    const image = req.file ? `${req.protocol}://${req.get("host")}/uploads/profile/${req.file.filename}` : undefined;
 
     const updateFields: any = {};
 
