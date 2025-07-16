@@ -30,14 +30,7 @@ export const createUser = async(req:Request, res:Response) =>{
 
     return res.status(200).json({
       message: "user saved successfully",
-      user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role:newUser.role,
-        password:newUser.password,
-        image: newUser.image
-      }
+      newUser
     });
 
   }
