@@ -47,7 +47,7 @@ const salarySchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Paid", "Unpaid", "Pending"],
+    enum: ["paid", "unpaid", "pending"],
     required: true,
   },
 });
