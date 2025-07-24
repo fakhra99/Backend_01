@@ -78,3 +78,14 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Fetch all salaries
+export const getAllSalaries = async (req: Request, res: Response) => {
+    try {
+        const salaries = await salaryModel.find();
+        res.status(200).json({ count: salaries.length, data: salaries });
+    } catch (error) {
+        console.error("Error fetching salaries:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
