@@ -4,6 +4,7 @@ import salaryModel from "../models/salaryModel.js";
 import salaryFileModel from "../models/salaryFileModel.js";
 import { salaryValidation } from "../schemas/salarySchema.js";
 import { Request, Response } from "express";
+import { sendEmail } from "../utils/sendEmail.js"; 
 
 type SalaryRow = {
   email: string;
@@ -69,10 +70,22 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
         ...data,
         sourceFile: savedFile._id
       });
+
+      //Send email
+      try {
+        await sendEmail(
+          data.email,
+          `Your salary for ${data.salaryMonth}`,
+          `Dear ${user.name || "Employee"},\n\nYour salary of Rs. ${data.salaryAmount} has been processed.\n\nNet Salary: Rs. ${data.netSalary}\nReceived on: ${new Date(data.dateReceived).toLocaleDateString()}\nStatus: ${data.status}\n\nRegards,\nHR Team`
+        );
+      } catch (emailError) {
+        console.error(`Failed to send email to ${data.email}`, emailError);
+      }
     }
 
-    return res.status(200).json({ message: "Salary data uploaded successfully" });
-
+    return res
+      .status(200)
+      .json({ message: "Salary data uploaded and emails sent successfully." });
   } catch (error) {
     console.error("Upload error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -81,11 +94,11 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
 
 // Fetch all salaries
 export const getAllSalaries = async (req: Request, res: Response) => {
-    try {
-        const salaries = await salaryModel.find();
-        res.status(200).json({ count: salaries.length, data: salaries });
-    } catch (error) {
-        console.error("Error fetching salaries:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
+  try {
+    const salaries = await salaryModel.find();
+    res.status(200).json({ count: salaries.length, data: salaries });
+  } catch (error) {
+    console.error("Error fetching salaries:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
