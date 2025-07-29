@@ -5,6 +5,7 @@ export interface ISalary extends Document {
   employeeId: string;
   email: string;
   salaryMonth: string;
+  salaryYear: number;
   salaryAmount: number;
   dateReceived: Date;
   description: string;
@@ -27,6 +28,12 @@ const salarySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
+  salaryYear: 
+  { type: Number, 
+    required: true 
+  },
+
   salaryAmount: {
     type: Number,
     required: true,
