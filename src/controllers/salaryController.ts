@@ -7,6 +7,7 @@ import { Request, Response } from "express";
 import { sendEmail } from "../utils/sendEmail.js";
 import { updateSalarySchema } from "../schemas/updateSalary.js";
 
+// typescript type definition
 type SalaryRow = {
   email: string;
   salaryMonth: string;
@@ -29,6 +30,7 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
     // Read Excel file
     const workbook = xlsx.readFile(file.path);
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    // sheet_to_json from the xlsx library always returns an array of objects
     const rows = xlsx.utils.sheet_to_json<SalaryRow>(sheet, {
       defval: "",
       raw: false
@@ -87,6 +89,7 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
     // Save each salary row
     for (const data of parsedData) {
       const result = salaryValidation.safeParse(data);
+      // success is boolean (true or false) given by Zod.
       if (!result.success) {
         console.log("Validation failed:", data.email, result.error.errors);
         continue;
