@@ -13,9 +13,8 @@ const port = process.env.PORT || 5000;
 
 connectDB();
 
-// Use cors middleware (make sure this is BEFORE routes)
 app.use(cors({
-  origin: "http://localhost:5173", // Your Vite frontend port
+  origin: "http://localhost:5173", //Vite frontend port
   credentials: true,
 }));
 
