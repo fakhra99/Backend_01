@@ -40,7 +40,7 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Excel file is empty." });
     }
 
-    // Normalize and enrich rows
+  // Normalize and enrich rows
     const parsedData = rows.map((row) => {
       const dateReceived = new Date(row.dateReceived);
       return {
@@ -48,13 +48,14 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
         salaryMonth: row.salaryMonth.trim(),
         salaryAmount: Number(row.salaryAmount),
         dateReceived,
-        salaryYear: dateReceived.getFullYear(),
+        salaryYear: Number(row.salaryYear),
         description: row.description,
         advances: row.advances,
         netSalary: Number(row.netSalary),
         status: row.status
       };
     });
+
 
     // Check for duplicate emails in uploaded file
     const emailList = parsedData.map((item) => item.email);
@@ -130,13 +131,50 @@ export const uploadSalaryExcel = async (req: Request, res: Response) => {
 
 export const getAllSalaries = async (req: Request, res: Response) => {
   try {
-    const salaries = await salaryModel.find();
-    res.status(200).json({ count: salaries.length, data: salaries });
+    // Extract pagination query params (all req.query values are strings)
+    const page = parseInt(req.query.page as string) || 1;  // default page 1
+    const limit = parseInt(req.query.limit as string) || 30; // default 30 rows/page
+    const skip = (page - 1) * limit;
+
+    // Extract month & year filters from query
+    const month = req.query.month as string;
+    const year = req.query.year as string;
+
+    // Build MongoDB query object dynamically
+    const query: any = {};
+    if (month) {
+      // Regex allows case-insensitive search (July == july == JULY)
+      query.salaryMonth = new RegExp(`^${month}$`, "i");
+    }
+    if (year) {
+      query.salaryYear = parseInt(year); // convert year to number
+    }
+
+    // Count total records for pagination (with applied filters)
+    const totalCount = await salaryModel.countDocuments(query);
+
+    // Fetch salaries with applied filters + pagination
+    const salaries = await salaryModel
+      .find(query)
+      .populate("employeeId", "name email") // populate only name & email
+      .skip(skip) // skip records for previous pages
+      .limit(limit) // limit per page
+      .lean(); // lean returns plain JS objects (faster)
+
+    // Respond with paginated data + filters
+    res.status(200).json({
+      total: totalCount,   // total records matching filters
+      page,                // current page
+      totalPages: Math.ceil(totalCount / limit), // total pages
+      data: salaries,  // salary list
+    });
+
   } catch (error) {
     console.error("Error fetching salaries:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 
 export const updateSalaryController = async (req: Request, res: Response) => {
