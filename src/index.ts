@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./utils/connectToDb.js";
 import userRoutes from "./routes/userRoutes.js"
 import salaryRoutes from "./routes/salaryoute.js"
+import cors from "cors";
 
 dotenv.config();
 
@@ -10,6 +11,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 connectDB();
+app.use(cors());
 
 app.use(express.json());
 
