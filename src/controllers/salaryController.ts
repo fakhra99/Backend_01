@@ -200,3 +200,38 @@ export const updateSalaryController = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+// delete api for slary
+export const deleteSalary = async (req: Request, res: Response) => {
+  try {
+    const {id} = req.params;
+    const deletedSalary = await salaryModel.findByIdAndDelete(id);
+
+    if(!deletedSalary) {
+      return res.status(404).json({ message: "Salary record not found" });
+    }
+
+    res.status(200).json({ message: "salary record deleted successfully", deletedSalary,})
+  }
+  catch (error) {
+    console.error("Error deleting salary:", error);
+    res.status(500).json({ message: "Server error", error });
+
+  }
+}
+
+// DELETE /api/salaries/deleteAll
+export const deleteAllSalariesController = async (req: Request, res: Response) => {
+  try {
+    // Delete all salary records
+    const result = await salaryModel.deleteMany({});
+
+    res.status(200).json({
+      message: "All salary records deleted successfully",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error deleting all salaries:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
