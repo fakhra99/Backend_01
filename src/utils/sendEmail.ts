@@ -5,6 +5,7 @@ export const sendEmail = async (
   subject: string,
   text: string
 ): Promise<void> => {
+  //  Creates an email sending service instance.
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
