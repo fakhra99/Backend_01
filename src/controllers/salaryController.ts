@@ -223,7 +223,7 @@ export const deleteSalary = async (req: Request, res: Response) => {
 // DELETE /api/salaries/deleteAll
 export const deleteAllSalariesController = async (req: Request, res: Response) => {
   try {
-    // Delete all salary records
+    // Delete all salary records-no filters
     const result = await salaryModel.deleteMany({});
 
     res.status(200).json({

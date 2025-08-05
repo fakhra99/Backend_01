@@ -14,6 +14,7 @@ export const sendEmail = async (
     },
   });
 
+  // method
   await transporter.sendMail({
     from: `"HR Team" <${process.env.EMAIL_USER}>`,
     to,
